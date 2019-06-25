@@ -4,16 +4,27 @@
 
 .label scratchPad = $fd
 .label GFX_MEM = $2000 
+.label currXStart = 159 
+.label currYStart = 99
 
 init:     lda #$00 
           sta CurrPoint
           sta CurrPoint+1 
           sta CurrentX+1 
           sta CurrentY+1 
-          lda #159 
+          sta DeltaX
+          sta DeltaX+1 
+          sta DeltaY 
+          sta DeltaY+1 
+          lda #currXStart
           sta CurrentX
-          lda #99
+          lda #currYStart
           sta CurrentY
+initSID:  lda #$ff 
+          sta $d40e
+          sta $d40f 
+          lda #$80 
+          sta $d412
 biton:    lda $d018 
           ora #$08 
           sta $d018 // set bitmap location to $2000 
@@ -36,12 +47,13 @@ biton:    lda $d018
 clcset:    lda #$04   //clear color RAM at $0400 - be careful near the end or BASIC memory will be corrupted
            sta scratchPad+1
            tax 
-           lda #$10 
+           lda #$01 
  clcolor:  ldy #$ff 
  clcinner: sta (scratchPad),y 
            dey
            bne clcinner 
            inx 
+           sta (scratchPad),y  // for the zeroth byte 
            stx scratchPad+1 
            cpx #$07
            bne clcolor
@@ -49,14 +61,15 @@ clcset:    lda #$04   //clear color RAM at $0400 - be careful near the end or BA
 clclast:   sta (scratchPad),y 
            dey 
            bne clclast
+           sta (scratchPad),y // for the zeroth byte on page 7
 mainLoop:  clc 
+           jsr RandHW
            ldx #$00 
-           jsr random
            cmp #85  
            bcc cont
            inx
            inx 
-           cmp #170 
+           cmp #171 
            bcc cont 
            inx
            inx  
@@ -105,7 +118,7 @@ mainLoop:  clc
            jmp mainLoop 
  currPntHi: inc CurrPoint+1 
            lda CurrPoint+1 
-           cmp #$10
+           cmp #$08
            beq waitSpace 
            jmp mainLoop 
  waitSpace:lda #$7F   // found in lemon64 forums
@@ -139,7 +152,11 @@ pllY: ldy #$00
       rts
 
 random: stx randx+1 //lfsr from CodeBase64
-        clc
+        // clc
+        // inc rndstr+1 
+        // bne rndhi
+        // inc rndstr+2
+ rndhi: clc
         ldx CurrPoint+1 
         lda seed   
         beq doEor
@@ -148,27 +165,28 @@ random: stx randx+1 //lfsr from CodeBase64
         bcc noEor
 doEor:  eor randomEor,x
 noEor:  sta seed
+// rndstr: sta rndBuffer-1
 randx:  ldx #$00  
         rts 
 
-VertexX: .word 0 
-         .word 319 
+RandHW: lda $d41b     //Get a random number from the SID HW Randon Number Generator 
+        rts 
+
+VertexX: .word 0
+         .word 319
          .word 159
 VertexY: .word 0
-         .word 0 
-         .word 199 
-CurrentX: .word  159
-CurrentY: .word 99 
+         .word 0
+         .word 199
+CurrentX: .word  currXStart
+CurrentY: .word currYStart
 DeltaX: .word 0 
 DeltaY: .word 0
 seed:  .byte 78 
 CurrPoint: .word 0 
 errorPoint: .byte 0 
 randomEor:  .byte $1d, $2b, $2d, $4d, $5f, $63, $65, $69
-            .byte $71, $87, $8d, $a9, $c3, $cf, $e7, $f5
-
-
-         
+            .byte $71, $87, $8d, $a9, $c3, $cf, $e7, $f5         
 
  //generate tables for bitmap access x and y lookup 
      .align $100

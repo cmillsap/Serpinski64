@@ -1,3 +1,9 @@
+// 
+// Serpinsksi.asm - Renders a Serpinski triangle on 320x200 bitmapped mode 
+// on the Commodore 64 using SID hardware generated random numbers 
+// C. Millsap - July 2019 
+// 
+
 *=$0801
         .byte $0E, $08, $0A, $00, $9E, $20, $28, $32
         .byte $30, $36, $34, $29, $00, $00, $00     // sys (2064)

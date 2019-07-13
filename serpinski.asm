@@ -163,11 +163,7 @@ pllY: ldy #$00
       rts
 
 random: stx randx+1 //lfsr from CodeBase64
-        // clc
-        // inc rndstr+1 
-        // bne rndhi
-        // inc rndstr+2
- rndhi: clc
+        clc
         ldx CurrPoint+1 
         lda seed   
         beq doEor

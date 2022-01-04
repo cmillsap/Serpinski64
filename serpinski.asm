@@ -17,10 +17,14 @@
 .label DeltaY = $fd
 .label BorColor = $0d
 .label memColor = $d0
+.label VICII = $d000
+.label borderReg = VICII + $20
+.label bitmapLocReg = VICII + $18 
+.label bitmapModeReg = VICII + $11
 
 init:     getTime(time1)
           lda #BorColor
-          sta $d020 
+          sta borderReg
           lda #$00 
           sta CurrPoint
           sta CurrPoint+1 
@@ -35,12 +39,12 @@ initSID:  lda #$ff
           sta $d40f 
           lda #$80 
           sta $d412
-biton:    lda $d018 
+biton:    lda bitmapLocReg 
           ora #$08 
-          sta $d018 // set bitmap location to $2000 
-          lda $d011 
+          sta bitmapLocReg // set bitmap location to $2000 
+          lda bitmapModeReg 
           ora #$20 
-          sta $d011 // turn on bitmap graphics mode 
+          sta bitmapModeReg // turn on bitmap graphics mode 
           lda #>GFX_MEM
           tax
           sta scratchPad+1 

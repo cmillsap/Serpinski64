@@ -1,8 +1,10 @@
 // 
 // Serpinsksi.asm - Renders a Serpinski triangle on 320x200 bitmapped mode 
 // on the Commodore 64 using SID hardware generated random numbers 
-// C. Millsap - July 2019 
+// Optimized random number selection using bit manipulation
+// C. Millsap - July 2019 (Modified)
 // 
+
 
 *=$0801
         .byte $0E, $08, $0A, $00, $9E, $20, $28, $32
@@ -83,23 +85,30 @@ clclast:   sta (scratchPad),y
            sta DeltaY 
            sta DeltaY+1
 mainLoop:  clc 
-           lda $d41b  // load a value from the SID's RNG - skippping the subroutine saves some time. 
-           ldx #$00 
-           cmp #85  
-           bcc cont
-           inx
-           inx 
-           cmp #171 
-           bcc cont 
-           inx
-           inx  
-  cont:    sec
+getRandom: lda $d41b  // load a value from the SID's RNG
+           and #$03   // Get bottom 2 bits (0-3)
+           cmp #$03   // Check if we got value 3
+           bne useValue  // If not 3, use the value
+           // Add delay to allow SID RNG to generate new value (need ~17 cycles)
+           nop        // 2 cycles
+           nop        // 2 cycles  
+           nop        // 2 cycles
+           nop        // 2 cycles
+           nop        // 2 cycles (total: 10 cycles + branch overhead = ~17 cycles)
+           jmp getRandom  // Try again
+useValue:  asl        // Multiply by 2 for word indexing (0->0, 1->2, 2->4)
+           tax        // Use as index into vertex tables
+           
+           // Calculate delta Y (VertexY - CurrentY)
+           sec
            lda VertexY,x
            sbc CurrentY
            sta DeltaY 
            lda VertexY+1,x 
            sbc CurrentY+1 
            sta DeltaY+1 
+           
+           // Calculate delta X (VertexX - CurrentX)
            sec 
            lda VertexX,x 
            sbc CurrentX 
@@ -107,16 +116,22 @@ mainLoop:  clc
            lda VertexX+1,x 
            sbc CurrentX+1 
            sta DeltaX+1 
+           
+           // Divide DeltaX by 2 (shift right)
            clc 
            lda DeltaX+1 
            asl 
            ror DeltaX+1 
            ror DeltaX 
+           
+           // Divide DeltaY by 2 (shift right)
            clc 
            lda DeltaY+1 
            asl  
            ror DeltaY+1 
            ror DeltaY 
+           
+           // Add DeltaX to CurrentX
            clc 
            lda CurrentX  
            adc DeltaX 
@@ -124,6 +139,8 @@ mainLoop:  clc
            lda CurrentX+1
            adc DeltaX+1  
            sta CurrentX+1 
+           
+           // Add DeltaY to CurrentY
            clc 
            lda CurrentY
            adc DeltaY 
@@ -131,6 +148,7 @@ mainLoop:  clc
            lda CurrentY+1 
            adc DeltaY+1 
            sta CurrentY+1
+           
            jsr plot 
            clc 
            inc CurrPoint 
@@ -206,7 +224,6 @@ YTableHi:
     .align $100
 YTableLo:
     .fill 200, <GFX_MEM+[320*floor(i/8)]+[i&7]
-    .align $100 
 
 
 

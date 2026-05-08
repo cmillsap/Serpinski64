@@ -1,0 +1,8 @@
+# git ignores
+*~
+build
+.vscode/c_cpp_properties.json
+.vscode/settings.json
+serphandopt.asm
+serpopt.asm
+serpopt2.asm

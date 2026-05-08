@@ -85,15 +85,10 @@ clclast:   sta (scratchPad),y
            sta DeltaY+1
 mainLoop:  clc 
            lda $d41b  // load a value from the SID's RNG - skippping the subroutine saves some time. 
-           ldx #$00 
-           cmp #85  
-           bcc cont
-           inx
-           inx 
-           cmp #171 
-           bcc cont 
-           inx
-           inx  
+           and #$0f
+           tax
+           lda VertexMap,x 
+           tax
   cont:    sec
            lda VertexY,x
            sbc CurrentY
@@ -143,6 +138,19 @@ mainLoop:  clc
            beq endserp
            jmp mainLoop 
  endserp:  getTime(time2)
+           sec 
+           lda time2+3 
+           sbc time1+3 
+           sta time2+3 
+           lda time2+2
+           sbc time1+2
+           sta time2+2 
+           lda time2+1
+           sbc time1+1
+           sta time2+1
+           lda time2
+           sbc time1
+           sta time2
  waitSpace:lda #$7F   // found in lemon64 forums
            sta $DC00 
            lda $DC01 
@@ -191,8 +199,10 @@ CurrPoint: .word 0
 errorPoint: .byte 0 
 time1: .dword 0 
 time2: .dword 0 
-randomEor:  .byte $1d, $2b, $2d, $4d, $5f, $63, $65, $69
-            .byte $71, $87, $8d, $a9, $c3, $cf, $e7, $f5         
+VertexMap: 
+          .byte 0, 0, 0, 0, 0   //0-4   -> Vertex 0
+          .byte 2, 2, 2, 2, 2    //5-9   -> Vertex 1
+          .byte 4, 4, 4, 4, 4, 4  //10-15 -> Vertex 2     
 
  //generate tables for bitmap access x and y lookup 
      .align $100

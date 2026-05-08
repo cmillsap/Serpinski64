@@ -1,0 +1,14 @@
+{
+    "name": "Serpinski64",
+    "description": "Project Serpinski64",
+    "toolkit": "kick",
+    "sources": [
+        "serpinskiLookupVerts.asm"
+
+    ],
+    "build": "debug",
+    "definitions": [],
+    "includes": [],
+    "args": [],
+    "compiler": ""
+}
